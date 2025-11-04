@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,47 +9,56 @@ import {
 } from "../ui/table";
 
 import Badge from "../ui/badge/Badge";
+import Pagination from "./Pagination";
 
-interface Order {
+// API models (based on the Hydra payload shape provided)
+interface ApiOrder {
+  "@id": string;
+  "@type": string;
   id: number;
-  fuelAmount: string;
+  fuelAmount: string; // numeric string in payload
   deliveryAddress: string;
-  status: string;
+  status: string; // e.g. pending | delivered | scheduled
+  createdAt?: string;
+  deliveredAt?: string;
+  notes?: string;
+  client?: string; // IRI
+  deliveryTruck?: string; // IRI
 }
 
-// Sample table data using the Order interface
-const tableData: Order[] = [
-  {
-    id: 1001,
-    fuelAmount: "5,000 L Diesel",
-    deliveryAddress: "123 Main St, Springfield",
-    status: "Pending",
-  },
-  {
-    id: 1002,
-    fuelAmount: "12,500 L Gasoline",
-    deliveryAddress: "456 Oak Ave, Riverdale",
-    status: "Scheduled",
-  },
-  {
-    id: 1003,
-    fuelAmount: "8,000 L Diesel",
-    deliveryAddress: "789 Pine Rd, Lakeside",
-    status: "Delivered",
-  },
-  {
-    id: 1004,
-    fuelAmount: "2,500 L Kerosene",
-    deliveryAddress: "22 Industrial Park, Metropolis",
-    status: "Cancelled",
-  },
-  {
-    id: 1005,
-    fuelAmount: "10,000 L Gasoline",
-    deliveryAddress: "77 Harbor Blvd, Bay City",
-    status: "Delivered",
-  },
-];
+interface HydraView {
+  "@id": string;
+  "@type": string;
+  first?: string;
+  last?: string;
+  next?: string;
+  previous?: string;
+}
+
+type OrdersHydraResponse =
+  | ({
+      "@context": string;
+      "@id": string;
+      "@type": string;
+      totalItems: number;
+      member: ApiOrder[];
+      view?: HydraView;
+    } & Record<string, unknown>)
+  | ({
+      "@context": string;
+      "@id": string;
+      "@type": string;
+      "hydra:totalItems": number;
+      "hydra:member": ApiOrder[];
+      "hydra:view"?: {
+        "@id": string;
+        "@type": string;
+        "hydra:first"?: string;
+        "hydra:last"?: string;
+        "hydra:next"?: string;
+        "hydra:previous"?: string;
+      };
+    } & Record<string, unknown>);
 
 function getStatusColor(status: string): "success" | "warning" | "error" {
   const s = status.toLowerCase();
@@ -57,7 +67,89 @@ function getStatusColor(status: string): "success" | "warning" | "error" {
   return "error"; // cancelled, failed, etc.
 }
 
-export default function BasicTableOne() {
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+
+export default function OrderTable() {
+  const [page, setPage] = useState(1);
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const token = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("auth_token");
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    async function fetchOrders() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const url = `${API_BASE}/orders?page=${page}`;
+        const res = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            // Prefer JSON-LD to align with Hydra
+            Accept: "application/ld+json, application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch orders (status ${res.status})`);
+        }
+
+        const data: OrdersHydraResponse = await res.json();
+        if (!isMounted) return;
+
+        // Support both Hydra and non-prefixed JSON-LD keys
+        const members = (data as any).member || (data as any)["hydra:member"] || [];
+        const itemsCount =
+          (data as any).totalItems ?? (data as any)["hydra:totalItems"] ?? 0;
+        const view = (data as any).view || (data as any)["hydra:view"];
+
+        setOrders(members);
+        setTotalItems(itemsCount);
+
+        // Determine totalPages
+        let pages = 1;
+        const lastUrl = view?.last || view?.["hydra:last"];
+        if (lastUrl) {
+          try {
+            const u = new URL(lastUrl, API_BASE);
+            const p = u.searchParams.get("page");
+            pages = p ? Math.max(1, parseInt(p, 10)) : 1;
+          } catch {
+            pages = 1;
+          }
+        } else {
+          const perPage = members?.length || 1; // fallback to avoid divide-by-zero
+          pages = perPage > 0 ? Math.max(1, Math.ceil(itemsCount / perPage)) : 1;
+        }
+        setTotalPages(pages);
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+        setError(err?.message || "Failed to load orders");
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchOrders();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [page, token]);
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
@@ -95,27 +187,81 @@ export default function BasicTableOne() {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {tableData.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="px-5 py-4 sm:px-6 text-start text-gray-800 text-theme-sm dark:text-white/90">
-                    #{order.id}
+              {isLoading && (
+                <TableRow>
+                  <TableCell className="px-5 py-6 text-center text-gray-500 dark:text-gray-400">
+                    Loading orders...
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {order.fuelAmount}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {order.deliveryAddress}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    <Badge size="sm" color={getStatusColor(order.status)}>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
                 </TableRow>
-              ))}
+              )}
+
+              {!isLoading && error && (
+                <TableRow>
+                  <TableCell className="px-5 py-6 text-center text-error-600 dark:text-error-400">
+                    {error}
+                  </TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                </TableRow>
+              )}
+
+              {!isLoading && !error && orders.length === 0 && (
+                <TableRow>
+                  <TableCell className="px-5 py-6 text-center text-gray-500 dark:text-gray-400">
+                    No orders found.
+                  </TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                  <TableCell className="px-4 py-6">{""}</TableCell>
+                </TableRow>
+              )}
+
+              {!isLoading && !error && orders.map((order) => {
+                const liters = Number(order.fuelAmount);
+                const formattedAmount = isFinite(liters)
+                  ? `${liters.toLocaleString()} L`
+                  : order.fuelAmount;
+                return (
+                  <TableRow key={order.id}>
+                    <TableCell className="px-5 py-4 sm:px-6 text-start text-gray-800 text-theme-sm dark:text-white/90">
+                      #{order.id}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {formattedAmount}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {order.deliveryAddress}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      <Badge size="sm" color={getStatusColor(order.status)}>
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
+      </div>
+
+      {/* Footer with pagination */}
+      <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 dark:border-white/[0.05]">
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+          Total: {totalItems.toLocaleString()} orders
+        </p>
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={(p) => {
+            if (p < 1 || p > totalPages || p === page) return;
+            setPage(p);
+          }}
+        />
       </div>
     </div>
   );
