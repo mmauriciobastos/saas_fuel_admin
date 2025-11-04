@@ -16,6 +16,10 @@ interface Client {
     image: string;
     name: string;
     email: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    stateProvince: string;
   };
   projectName: string;
   team: {
@@ -31,8 +35,12 @@ const tableData: Client[] = [
     id: 1,
     client: {
       image: "/images/user/user-17.jpg",
-      name: "Lindsey Curtis",
+      name: "Lindsey F. Curtis",
       email: "lindsey@example.com",
+      address: "123 Main St",
+      city: "New York",
+      postalCode: "10001",
+      stateProvince: "NY",
     },
     projectName: "Agency Website",
     team: {
@@ -51,6 +59,10 @@ const tableData: Client[] = [
       image: "/images/user/user-18.jpg",
       name: "Kaiya George",
       email: "kaiya@example.com",
+      address: "456 Elm St",
+      city: "Los Angeles",
+      postalCode: "90001",
+      stateProvince: "CA",
     },
     projectName: "Technology",
     team: {
@@ -65,6 +77,10 @@ const tableData: Client[] = [
       image: "/images/user/user-17.jpg",
       name: "Zain Geidt",
       email: "zain@example.com",
+      address: "789 Oak St",
+      city: "Chicago",
+      postalCode: "60601",
+      stateProvince: "IL",
     },
     projectName: "Blog Writing",
     team: {
@@ -79,6 +95,10 @@ const tableData: Client[] = [
       image: "/images/user/user-20.jpg",
       name: "Abram Schleifer",
       email: "abram@example.com",
+      address: "101 Pine St",
+      city: "Houston",
+      postalCode: "77001",
+      stateProvince: "TX",
     },
     projectName: "Social Media",
     team: {
@@ -97,6 +117,10 @@ const tableData: Client[] = [
       image: "/images/user/user-21.jpg",
       name: "Carla George",
       email: "carla@example.com",
+      address: "202 Maple St",
+      city: "Phoenix",
+      postalCode: "85001",
+      stateProvince: "AZ",
     },
     projectName: "Website",
     team: {
@@ -130,7 +154,7 @@ export default function ClientTable() {
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
-                  Project Name
+                  Address
                 </TableCell>
                 <TableCell
                   isHeader
@@ -155,34 +179,34 @@ export default function ClientTable() {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {tableData.map((order) => (
-                <TableRow key={order.id}>
+              {tableData.map((data) => (
+                <TableRow key={data.id}>
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 overflow-hidden rounded-full">
                         <Image
                           width={40}
                           height={40}
-                          src={order.client.image}
-                          alt={order.client.name}
+                          src={data.client.image}
+                          alt={data.client.name}
                         />
                       </div>
                       <div>
                         <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                          {order.client.name}
+                          {data.client.name}
                         </span>
                         <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
-                          {order.client.email}
+                          {data.client.email}
                         </span>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {order.projectName}
+                    {data.client.address}, {data.client.city}, {data.client.stateProvince} {data.client.postalCode}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <div className="flex -space-x-2">
-                      {order.team.images.map((teamImage, index) => (
+                      {data.team.images.map((teamImage, index) => (
                         <div
                           key={index}
                           className="w-6 h-6 overflow-hidden border-2 border-white rounded-full dark:border-gray-900"
@@ -202,18 +226,18 @@ export default function ClientTable() {
                     <Badge
                       size="sm"
                       color={
-                        order.status === "Active"
+                        data.status === "Active"
                           ? "success"
-                          : order.status === "Pending"
+                          : data.status === "Pending"
                           ? "warning"
                           : "error"
                       }
                     >
-                      {order.status}
+                      {data.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                    {order.budget}
+                    {data.budget}
                   </TableCell>
                 </TableRow>
               ))}
