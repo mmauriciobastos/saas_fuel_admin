@@ -16,6 +16,7 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
+  DocsIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
 
@@ -33,9 +34,19 @@ const navItems: NavItem[] = [
     subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   },
   {
+    name: "Orders",
+    icon: <PageIcon />,
+    path: "/orders",
+  },
+  {
+    name: "Clients",
+    icon: <ListIcon />,
+    path: "/clients",
+  },
+  {
     icon: <CalenderIcon />,
     name: "Calendar",
-    path: "/calendar",
+    
   },
   {
     icon: <UserCircleIcon />,
