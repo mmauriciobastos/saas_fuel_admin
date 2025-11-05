@@ -70,6 +70,19 @@ function getStatusColor(status: string): "success" | "warning" | "error" {
 import { apiFetch, getApiBase } from "@/lib/api";
 const API_BASE = getApiBase();
 
+function formatCreatedAt(raw?: string): string {
+  if (!raw) return "-";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  const DD = String(d.getDate()).padStart(2, "0");
+  const MM = String(d.getMonth() + 1).padStart(2, "0");
+  const YYYY = d.getFullYear();
+  const HH = String(d.getHours()).padStart(2, "0"); // H (24h) zero-padded
+  const ii = String(d.getMinutes()).padStart(2, "0"); // i (minutes) zero-padded
+  const ss = String(d.getSeconds()).padStart(2, "0"); // s (seconds) zero-padded
+  return `${DD}/${MM}/${YYYY} ${HH}:${ii}:${ss}`;
+}
+
 export default function OrderTable() {
   const [page, setPage] = useState(1);
   const [orders, setOrders] = useState<ApiOrder[]>([]);
@@ -174,6 +187,12 @@ export default function OrderTable() {
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
+                  Created
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                >
                   Status
                 </TableCell>
               </TableRow>
@@ -229,6 +248,9 @@ export default function OrderTable() {
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {order.deliveryAddress}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {formatCreatedAt(order.createdAt)}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <Badge size="sm" color={getStatusColor(order.status)}>
