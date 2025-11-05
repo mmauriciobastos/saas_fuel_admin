@@ -17,6 +17,7 @@ import {
   TableIcon,
   UserCircleIcon,
   DocsIcon,
+  GroupIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
 
@@ -43,7 +44,7 @@ const navItems: NavItem[] = [
   },
   {
     name: "Clients",
-    icon: <ListIcon />,
+    icon: <GroupIcon />,
     path: "/clients",
   },
   {
@@ -54,7 +55,7 @@ const navItems: NavItem[] = [
   {
     icon: <CalenderIcon />,
     name: "Calendar",
-    
+    path: "/calendar",
   },
   {
     icon: <UserCircleIcon />,
@@ -62,24 +63,6 @@ const navItems: NavItem[] = [
     path: "/profile",
   },
 
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
-    ],
-  },
 ];
 
 const othersItems: NavItem[] = [
@@ -103,14 +86,7 @@ const othersItems: NavItem[] = [
       { name: "Videos", path: "/videos", pro: false },
     ],
   },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
+  
 ];
 
 const AppSidebar: React.FC = () => {
