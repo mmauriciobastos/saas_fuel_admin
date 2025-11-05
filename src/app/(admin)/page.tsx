@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import CardWrapper from "@/components/dashboard/Cards";
 import React from "react";
-import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";
+import MonthlyTarget from "@/components/dashboard/MonthlyTarget";
 import MonthlySalesChart from "@/components/dashboard/MonthlySalesChart";
 import StatisticsChart from "@/components/ecommerce/StatisticsChart";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
@@ -20,7 +20,7 @@ export default function Ecommerce() {
       <div className="col-span-12 space-y-6 xl:col-span-7">
         <CardWrapper />
 
-        <MonthlySalesChart />
+        
       </div>
 
       <div className="col-span-12 xl:col-span-5">
@@ -31,13 +31,6 @@ export default function Ecommerce() {
         <StatisticsChart />
       </div>
 
-      <div className="col-span-12 xl:col-span-5">
-        <DemographicCard />
-      </div>
-
-      <div className="col-span-12 xl:col-span-7">
-        <RecentOrders />
-      </div>
     </div>
   );
 }
