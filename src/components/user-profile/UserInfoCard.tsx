@@ -5,9 +5,11 @@ import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
+  const { user } = useAuth();
   const handleSave = () => {
     // Handle save logic here
     console.log("Saving changes...");
@@ -26,45 +28,35 @@ export default function UserInfoCard() {
               <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                 First Name
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                Musharof
-              </p>
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">{user?.firstName ?? "—"}</p>
             </div>
 
             <div>
               <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                 Last Name
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                Chowdhury
-              </p>
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">{user?.lastName ?? "—"}</p>
             </div>
 
             <div>
               <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                 Email address
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                randomuser@pimjo.com
-              </p>
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">{user?.email ?? "—"}</p>
             </div>
 
             <div>
               <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                 Phone
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                +09 363 398 46
-              </p>
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">—</p>
             </div>
 
             <div>
               <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                 Bio
               </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                Team Manager
-              </p>
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">—</p>
             </div>
           </div>
         </div>

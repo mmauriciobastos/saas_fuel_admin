@@ -5,9 +5,11 @@ import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function UserAddressCard() {
   const { isOpen, openModal, closeModal } = useModal();
+  const { user } = useAuth();
   const handleSave = () => {
     // Handle save logic here
     console.log("Saving changes...");
@@ -27,36 +29,28 @@ export default function UserAddressCard() {
                 <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                   Country
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  United States
-                </p>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90">—</p>
               </div>
 
               <div>
                 <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                   City/State
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  Phoenix, Arizona, United States.
-                </p>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90">—</p>
               </div>
 
               <div>
                 <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                   Postal Code
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  ERT 2489
-                </p>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90">—</p>
               </div>
 
               <div>
                 <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
                   TAX ID
                 </p>
-                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  AS4568384
-                </p>
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90">—</p>
               </div>
             </div>
           </div>
