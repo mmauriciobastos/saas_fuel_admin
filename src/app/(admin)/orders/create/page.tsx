@@ -139,7 +139,7 @@ export default function NewOrderPage() {
         client: clientIri,
         fuelAmount: String(Number(fuelAmount)),
         deliveryAddress,
-        status: "scheduled",
+        status: "pending",
         notes: notes || undefined,
       };
 

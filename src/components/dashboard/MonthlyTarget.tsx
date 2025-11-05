@@ -122,7 +122,7 @@ export default function MonthlyTarget() {
           </span>
         </div>
         <p className="mx-auto mt-10 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
-          You earn $3287 today, it&apos;s higher than last month.
+          You earn $23,287 today, it&apos;s higher than last month.
         </p>
       </div>
 
