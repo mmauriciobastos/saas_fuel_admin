@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -66,8 +66,8 @@ function getStatusColor(
   return "error"; // maintenance, offline, etc.
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+import { apiFetch, getApiBase } from "@/lib/api";
+const API_BASE = getApiBase();
 
 export default function TruckTable() {
   const [page, setPage] = useState(1);
@@ -76,11 +76,6 @@ export default function TruckTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const token = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("auth_token");
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -91,12 +86,10 @@ export default function TruckTable() {
       setError(null);
       try {
         const url = `${API_BASE}/delivery_trucks?page=${page}`;
-        const res = await fetch(url, {
+        const res = await apiFetch(url, {
           method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Accept: "application/ld+json, application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           signal: controller.signal,
         });
@@ -145,7 +138,7 @@ export default function TruckTable() {
       isMounted = false;
       controller.abort();
     };
-  }, [page, token]);
+  }, [page]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">

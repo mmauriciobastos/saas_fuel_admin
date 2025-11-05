@@ -9,11 +9,12 @@ import Select from "@/components/form/Select";
  
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch, getApiBase } from "@/lib/api";
 
  
 
 // API base (same approach used in tables)
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE = getApiBase();
 
 // Client model (subset used in the form)
 interface ApiClient {
@@ -60,11 +61,6 @@ export default function NewOrderPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const token = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("auth_token");
-  }, []);
-
   // Fetch clients for the combobox (first page)
   useEffect(() => {
     let isMounted = true;
@@ -72,11 +68,9 @@ export default function NewOrderPage() {
     (async () => {
       try {
         setIsLoadingClients(true);
-        const res = await fetch(`${API_BASE}/clients?page=1`, {
+        const res = await apiFetch(`${API_BASE}/clients?page=1`, {
           headers: {
             Accept: "application/ld+json, application/json",
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           signal: controller.signal,
         });
@@ -97,7 +91,7 @@ export default function NewOrderPage() {
       isMounted = false;
       controller.abort();
     };
-  }, [token]);
+  }, []);
 
   // When client changes, auto-fill address
   useEffect(() => {
@@ -149,12 +143,10 @@ export default function NewOrderPage() {
         notes: notes || undefined,
       };
 
-      const res = await fetch(`${API_BASE}/orders`, {
+      const res = await apiFetch(`${API_BASE}/orders`, {
         method: "POST",
         headers: {
           Accept: "application/ld+json, application/json",
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
       });
