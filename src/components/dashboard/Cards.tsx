@@ -121,8 +121,7 @@ export default function CardWrapper() {
             </h4>
           </div>
           <Badge color="warning">
-            <ArrowUpIcon />
-            5.01%
+           Pending orders
           </Badge>
         </div>
       </div>
@@ -144,8 +143,7 @@ export default function CardWrapper() {
           </div>
 
           <Badge color="success">
-            <ArrowUpIcon  />
-            19.05%
+            Delivered orders
           </Badge>
         </div>
       </div>
