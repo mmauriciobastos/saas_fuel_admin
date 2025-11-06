@@ -60,10 +60,12 @@ type OrdersHydraResponse =
       };
     } & Record<string, unknown>);
 
-function getStatusColor(status: string): "success" | "warning" | "error" {
+function getStatusColor(status: string): "success" | "warning" | "error" | "primary" {
   const s = status.toLowerCase();
   if (s === "delivered" || s === "complete" || s === "completed") return "success";
-  if (s === "pending" || s === "scheduled" || s === "in progress") return "warning";
+  if (s === "scheduled" || s === "in progress") return "primary";
+  if (s === "pending" ) return "warning";
+  if (s === "cancelled" || s === "failed") return "error";
   return "error"; // cancelled, failed, etc.
 }
 
