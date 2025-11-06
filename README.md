@@ -1,68 +1,67 @@
-# TailAdmin Next.js - Free Next.js Tailwind Admin Dashboard Template
 
-TailAdmin is a free and open-source admin dashboard template built on **Next.js and Tailwind CSS** providing developers with everything they need to create a feature-rich and data-driven: back-end, dashboard, or admin panel solution for any sort of web project.
 
-![TailAdmin - Next.js Dashboard Preview](./banner.png)
+## Docker
 
-With TailAdmin Next.js, you get access to all the necessary dashboard UI components, elements, and pages required to build a high-quality and complete dashboard or admin panel. Whether you're building a dashboard or admin panel for a complex web application or a simple website. 
-
-TailAdmin utilizes the powerful features of **Next.js 15** and common features of Next.js such as server-side rendering (SSR), static site generation (SSG), and seamless API route integration. Combined with the advancements of **React 19** and the robustness of **TypeScript**, TailAdmin is the perfect solution to help get your project up and running quickly.
-
-## Overview
-
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and control panels. It's built on:
-
-- Next.js 15.x
-- React 19
-- TypeScript
-- Tailwind CSS V4
-
-### Quick Links
-- [✨ Visit Website](https://tailadmin.com)
-- [📄 Documentation](https://tailadmin.com/docs)
-- [⬇️ Download](https://tailadmin.com/download)
-- [🖌️ Figma Design File (Community Edition)](https://www.figma.com/community/file/1463141366275764364)
-- [⚡ Get PRO Version](https://tailadmin.com/pricing)
-
-### Demos
-- [Free Version](https://nextjs-free-demo.tailadmin.com)
-- [Pro Version](https://nextjs-demo.tailadmin.com)
-
-### Other Versions
-- [HTML Version](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template)
-- [React Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
-
-## Installation
-
-### Prerequisites
-To get started with TailAdmin, ensure you have the following prerequisites installed and set up:
-
-- Node.js 18.x or later (recommended to use Node.js 20.x or later)
-
-### Cloning the Repository
-Clone the repository using the following command:
+### Build & Run (Production Image)
 
 ```bash
-git clone https://github.com/TailAdmin/free-nextjs-admin-dashboard.git
+docker build -t saas-fuel-admin .
+docker run --rm -p 3000:3000 --name saas-fuel-admin saas-fuel-admin
 ```
 
-> Windows Users: place the repository near the root of your drive if you face issues while cloning.
+Then visit: http://localhost:3000
 
-1. Install dependencies:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-    > Use `--legacy-peer-deps` flag if you face peer-dependency error during installation.
+### Using docker-compose
 
-2. Start the development server:
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+```bash
+docker compose up --build
+```
+
+### Customize Environment
+
+Expose environment variables at runtime:
+
+```bash
+docker run -e NEXT_PUBLIC_API_BASE_URL="http://localhost:8000/api" -p 3000:3000 saas-fuel-admin
+```
+
+If you need secrets (never bake into image), use a `.env` file and pass `--env-file .env`.
+
+### Development (Hot Reload) Option
+
+For local iterative development you can mount the source and run the dev server:
+
+```bash
+docker run --rm -it -p 3000:3000 -v "$(pwd)":/app -w /app node:20-alpine sh -c "npm ci --legacy-peer-deps && npm run dev"
+```
+
+### Image Structure
+
+This repository uses a multi-stage Docker build:
+
+1. deps stage: installs dependencies via `npm ci` using cached layers
+2. builder stage: creates a Next.js production build with `output=standalone`
+3. runner stage: minimal runtime containing only `.next/standalone`, `.next/static`, and `public/` assets, running as non-root user `nextjs`
+
+### Security / Best Practices Applied
+
+- Non-root user execution
+- Standalone output reduces attack surface & image size
+- `.dockerignore` keeps build context lean
+- Telemetry disabled via `NEXT_TELEMETRY_DISABLED=1`
+- Explicit `NODE_ENV=production`
+
+### Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Asset 404 | Ensure `public/` copied & no basePath misconfig |
+| API URL wrong | Set `NEXT_PUBLIC_API_BASE_URL` at runtime |
+| Build fails on missing dep | Delete local `node_modules` & retry `npm ci` |
+| Memory issues on build | Increase Docker memory to >= 2GB |
+
+---
+
 
 ## Components
 
