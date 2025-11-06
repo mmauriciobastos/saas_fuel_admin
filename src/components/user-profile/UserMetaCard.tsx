@@ -5,7 +5,6 @@ import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 
 

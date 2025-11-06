@@ -2,7 +2,6 @@
 import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
-import Button from "@/components/ui/button/Button";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -31,7 +30,7 @@ export default function SignInForm() {
       } else {
         setError('Invalid email or password. Please try again.');
       }
-    } catch (error) {
+    } catch {
       setError('An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);

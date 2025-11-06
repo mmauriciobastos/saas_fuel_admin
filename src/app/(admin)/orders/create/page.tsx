@@ -10,6 +10,7 @@ import Select from "@/components/form/Select";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, getApiBase } from "@/lib/api";
+import { HydraCollection, getHydraMembers } from "@/types/hydra";
 
  
 
@@ -29,23 +30,7 @@ interface ApiClient {
   stateProvince: string;
 }
 
-type ClientsHydraResponse =
-  | {
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      totalItems: number;
-      member: ApiClient[];
-      view?: any;
-    }
-  | {
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      "hydra:totalItems": number;
-      "hydra:member": ApiClient[];
-      "hydra:view"?: any;
-    };
+type ClientsHydraResponse = HydraCollection<ApiClient>;
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -77,10 +62,9 @@ export default function NewOrderPage() {
         if (!res.ok) throw new Error(`Failed to load clients (${res.status})`);
         const data: ClientsHydraResponse = await res.json();
         if (!isMounted) return;
-        const members = (data as any).member || (data as any)["hydra:member"] || [];
-        setClients(members);
-      } catch (e: any) {
-        if (e?.name !== "AbortError") {
+        setClients(getHydraMembers(data));
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name !== "AbortError") {
           console.error(e);
         }
       } finally {
@@ -158,8 +142,8 @@ export default function NewOrderPage() {
 
       setSuccess("Order created successfully. Redirecting to Orders...");
       setTimeout(() => router.push("/orders"), 900);
-    } catch (e: any) {
-      setError(e?.message || "Failed to create order");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to create order");
     } finally {
       setSubmitting(false);
     }
@@ -202,7 +186,7 @@ export default function NewOrderPage() {
             <Label>Fuel Amount (L) <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              step={0.01 as any}
+              step={0.01}
               placeholder="e.g. 400.52"
               value={fuelAmount}
               onChange={(e) => setFuelAmount(e.target.value)}

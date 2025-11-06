@@ -10,6 +10,8 @@ import {
 
 import Badge from "../ui/badge/Badge";
 import Pagination from "./Pagination";
+import { apiFetch, getApiBase } from "@/lib/api";
+import { type HydraCollection, getHydraMembers, getHydraTotalItems, getHydraView } from "@/types/hydra";
 
 // API models (based on the Hydra payload shape provided)
 interface ApiOrder {
@@ -26,39 +28,7 @@ interface ApiOrder {
   deliveryTruck?: string; // IRI
 }
 
-interface HydraView {
-  "@id": string;
-  "@type": string;
-  first?: string;
-  last?: string;
-  next?: string;
-  previous?: string;
-}
-
-type OrdersHydraResponse =
-  | ({
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      totalItems: number;
-      member: ApiOrder[];
-      view?: HydraView;
-    } & Record<string, unknown>)
-  | ({
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      "hydra:totalItems": number;
-      "hydra:member": ApiOrder[];
-      "hydra:view"?: {
-        "@id": string;
-        "@type": string;
-        "hydra:first"?: string;
-        "hydra:last"?: string;
-        "hydra:next"?: string;
-        "hydra:previous"?: string;
-      };
-    } & Record<string, unknown>);
+type OrdersHydraResponse = HydraCollection<ApiOrder>;
 
 function getStatusColor(status: string): "success" | "warning" | "error" | "primary" {
   const s = status.toLowerCase();
@@ -69,7 +39,6 @@ function getStatusColor(status: string): "success" | "warning" | "error" | "prim
   return "error"; // cancelled, failed, etc.
 }
 
-import { apiFetch, getApiBase } from "@/lib/api";
 const API_BASE = getApiBase();
 
 function formatCreatedAt(raw?: string): string {
@@ -118,11 +87,9 @@ export default function OrderTable() {
         const data: OrdersHydraResponse = await res.json();
         if (!isMounted) return;
 
-        // Support both Hydra and non-prefixed JSON-LD keys
-        const members = (data as any).member || (data as any)["hydra:member"] || [];
-        const itemsCount =
-          (data as any).totalItems ?? (data as any)["hydra:totalItems"] ?? 0;
-        const view = (data as any).view || (data as any)["hydra:view"];
+        const members = getHydraMembers(data);
+        const itemsCount = getHydraTotalItems(data) ?? 0;
+        const view = getHydraView(data);
 
         setOrders(members);
         setTotalItems(itemsCount);
@@ -143,9 +110,13 @@ export default function OrderTable() {
           pages = perPage > 0 ? Math.max(1, Math.ceil(itemsCount / perPage)) : 1;
         }
         setTotalPages(pages);
-      } catch (err: any) {
-        if (err?.name === "AbortError") return;
-        setError(err?.message || "Failed to load orders");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          if (err.name === "AbortError") return;
+          setError(err.message || "Failed to load orders");
+        } else {
+          setError("Failed to load orders");
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }

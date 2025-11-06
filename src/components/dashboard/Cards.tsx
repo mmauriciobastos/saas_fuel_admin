@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Badge from "../ui/badge/Badge";
-import { ArrowDownIcon, ArrowUpIcon, BoxIconLine, GroupIcon, InfoIcon, CheckCircleIcon, DollarLineIcon } from "@/icons";
+import { ArrowUpIcon, GroupIcon, InfoIcon, CheckCircleIcon, DollarLineIcon } from "@/icons";
 import { apiFetch, getApiBase } from "@/lib/api";
 
 const API_BASE = getApiBase();
@@ -44,9 +44,13 @@ export default function CardWrapper() {
         const json: DashboardResponse = await res.json();
         if (!isMounted) return;
         setData(json);
-      } catch (e: any) {
-        if (e?.name === "AbortError") return;
-        setError(e?.message || "Failed to load dashboard");
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          if (e.name === "AbortError") return;
+          setError(e.message || "Failed to load dashboard");
+        } else {
+          setError("Failed to load dashboard");
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }

@@ -69,16 +69,17 @@ export async function apiFetch(input: RequestInfo | URL, init: ApiFetchOptions =
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(input as any, { ...rest, headers });
+  const response = await fetch(input, { ...rest, headers });
 
   if (response.status === 401 && !skipAuthRedirect) {
     // Clear any persisted auth and redirect to signin (unless already there)
     clearAuthStorage();
     safeRedirectToSignin();
     // Reject to stop caller logic; attaching original response for optional inspection
-    const err: any = new Error("Unauthorized");
-    err.response = response;
-    throw err;
+    const unauthorizedError = new Error("Unauthorized");
+    // Attach response for optional caller inspection via type assertion when needed
+    (unauthorizedError as Error & { response?: Response }).response = response;
+    throw unauthorizedError;
   }
 
   return response;

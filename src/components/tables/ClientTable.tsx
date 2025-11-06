@@ -8,7 +8,6 @@ import {
   TableRow,
 } from "../ui/table";
 
-import Image from "next/image";
 import Pagination from "./Pagination";
 // API models for Clients (based on the provided Hydra payload)
 interface ApiClient {
@@ -25,39 +24,12 @@ interface ApiClient {
   createdAt?: string;
 }
 
-type ClientsHydraResponse =
-  | ({
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      totalItems: number;
-      member: ApiClient[];
-      view?: {
-        "@id": string;
-        "@type": string;
-        first?: string;
-        last?: string;
-        next?: string;
-        previous?: string;
-      };
-    } & Record<string, unknown>)
-  | ({
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      "hydra:totalItems": number;
-      "hydra:member": ApiClient[];
-      "hydra:view"?: {
-        "@id": string;
-        "@type": string;
-        "hydra:first"?: string;
-        "hydra:last"?: string;
-        "hydra:next"?: string;
-        "hydra:previous"?: string;
-      };
-    } & Record<string, unknown>);
+// Consolidated Hydra collection type
+// Retained for potential future explicit typing; currently unused so omitted to satisfy lint
+// type ClientsHydraResponse = HydraCollection<ApiClient>;
 
 import { apiFetch, getApiBase } from "@/lib/api";
+import { type HydraCollection, getHydraMembers, getHydraTotalItems, getHydraView } from "@/types/hydra";
 const API_BASE = getApiBase();
 
 export default function ClientTable() {
@@ -89,13 +61,12 @@ export default function ClientTable() {
           throw new Error(`Failed to fetch clients (status ${res.status})`);
         }
 
-        const data: ClientsHydraResponse = await res.json();
+        const data: HydraCollection<ApiClient> = await res.json();
         if (!isMounted) return;
 
-        const members = (data as any).member || (data as any)["hydra:member"] || [];
-        const itemsCount =
-          (data as any).totalItems ?? (data as any)["hydra:totalItems"] ?? 0;
-        const view = (data as any).view || (data as any)["hydra:view"];
+        const members = getHydraMembers(data);
+        const itemsCount = getHydraTotalItems(data) ?? 0;
+        const view = getHydraView(data);
 
         setClients(members);
         setTotalItems(itemsCount);
@@ -115,9 +86,13 @@ export default function ClientTable() {
           pages = perPage > 0 ? Math.max(1, Math.ceil(itemsCount / perPage)) : 1;
         }
         setTotalPages(pages);
-      } catch (err: any) {
-        if (err?.name === "AbortError") return;
-        setError(err?.message || "Failed to load clients");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          if (err.name === "AbortError") return;
+          setError(err.message || "Failed to load clients");
+        } else {
+          setError("Failed to load clients");
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }

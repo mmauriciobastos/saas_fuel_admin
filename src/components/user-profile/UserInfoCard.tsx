@@ -8,7 +8,7 @@ import Label from "../form/Label";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function UserInfoCard() {
-  const { isOpen, openModal, closeModal } = useModal();
+  const { isOpen, closeModal } = useModal();
   const { user } = useAuth();
   const handleSave = () => {
     // Handle save logic here

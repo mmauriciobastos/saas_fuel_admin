@@ -10,6 +10,8 @@ import {
 
 import Badge from "../ui/badge/Badge";
 import Pagination from "./Pagination";
+import { apiFetch, getApiBase } from "@/lib/api";
+import { type HydraCollection, getHydraMembers, getHydraTotalItems, getHydraView } from "@/types/hydra";
 
 // API models for Delivery Trucks (based on provided payload)
 interface ApiTruck {
@@ -24,37 +26,7 @@ interface ApiTruck {
   createdAt?: string;
 }
 
-type TrucksHydraResponse =
-  | ({
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      totalItems: number;
-      member: ApiTruck[];
-      view?: {
-        "@id": string;
-        "@type": string;
-        first?: string;
-        last?: string;
-        next?: string;
-        previous?: string;
-      };
-    } & Record<string, unknown>)
-  | ({
-      "@context": string;
-      "@id": string;
-      "@type": string;
-      "hydra:totalItems": number;
-      "hydra:member": ApiTruck[];
-      "hydra:view"?: {
-        "@id": string;
-        "@type": string;
-        "hydra:first"?: string;
-        "hydra:last"?: string;
-        "hydra:next"?: string;
-        "hydra:previous"?: string;
-      };
-    } & Record<string, unknown>);
+type TrucksHydraResponse = HydraCollection<ApiTruck>;
 
 function getStatusColor(
   status: string
@@ -66,7 +38,6 @@ function getStatusColor(
   return "error"; // maintenance, offline, etc.
 }
 
-import { apiFetch, getApiBase } from "@/lib/api";
 const API_BASE = getApiBase();
 
 export default function TruckTable() {
@@ -101,10 +72,9 @@ export default function TruckTable() {
         const data: TrucksHydraResponse = await res.json();
         if (!isMounted) return;
 
-        const members = (data as any).member || (data as any)["hydra:member"] || [];
-        const itemsCount =
-          (data as any).totalItems ?? (data as any)["hydra:totalItems"] ?? 0;
-        const view = (data as any).view || (data as any)["hydra:view"];
+        const members = getHydraMembers(data);
+        const itemsCount = getHydraTotalItems(data) ?? 0;
+        const view = getHydraView(data);
 
         setTrucks(members);
         setTotalItems(itemsCount);
@@ -124,9 +94,13 @@ export default function TruckTable() {
           pages = perPage > 0 ? Math.max(1, Math.ceil(itemsCount / perPage)) : 1;
         }
         setTotalPages(pages);
-      } catch (err: any) {
-        if (err?.name === "AbortError") return;
-        setError(err?.message || "Failed to load trucks");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          if (err.name === "AbortError") return;
+          setError(err.message || "Failed to load trucks");
+        } else {
+          setError("Failed to load trucks");
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
