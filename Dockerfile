@@ -16,6 +16,8 @@ RUN npm ci --legacy-peer-deps
 
 # Build the application
 FROM base AS builder
+# Increase available memory for Node during build to mitigate OOM on constrained Docker setups
+ENV NODE_OPTIONS=--max_old_space_size=2048
 # Copy application source
 COPY . .
 # Reuse deps from deps stage

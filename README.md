@@ -85,7 +85,7 @@ This repository uses a multi-stage Docker build:
 | Asset 404 | Ensure `public/` copied & no basePath misconfig |
 | API URL wrong | Set `NEXT_PUBLIC_API_BASE_URL` at runtime |
 | Build fails on missing dep | Delete local `node_modules` & retry `npm ci` |
-| Memory issues on build | Increase Docker memory to >= 2GB |
+| Memory issues on build | Increase Docker memory to >= 2GB, or set `NODE_OPTIONS=--max_old_space_size=2048` in the Docker build stage |
 
 ---
 
