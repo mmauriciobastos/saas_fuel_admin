@@ -39,11 +39,23 @@ git clone https://github.com/mmauriciobastos/saas_fuel_admin.git
 
 ### Start the Frontend Application
 
-Navigate to the frontend project and start the containers:
+Navigate to the frontend project to build and start the containers:
 
 ```
 cd saas_fuel_admin
-docker-compose up -d
+```
+
+```
+docker compose build --no-cache
+```
+
+```
+docker compose up -d
+```
+
+Install dependecies
+```
+docker exec -it saas_fuel_admin_web npm install
 ```
 
 This will build and run the Next.js Admin Dashboard application.
