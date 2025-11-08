@@ -29,15 +29,27 @@ If you’ve already followed the SaaS Fuel API guide, you should have both the b
 
 
 
+## Frontend (Admin Panel - Next.js)
+
 ### Clone the Frontend Repository
 
+⚠️ **Important:** 
 Clone it outside the `saas_fuel_api` folder (or anywhere you prefer):
+
+Recomended folder structure:
+```
+your_local_folder/
+├── saas_fuel_api/    # Symfony API (backend)
+└── saas_fuel_admin/  # NextJS Admin Dashboard (frontend)
+```
+
+Navigate to 'your_local_folder' and clone the frontend repository:
 
 ```
 git clone https://github.com/mmauriciobastos/saas_fuel_admin.git
 ```
 
-### Start the Frontend Application
+### Option A: Docker container
 
 Navigate to the frontend project to build and start the containers:
 
@@ -63,6 +75,44 @@ This will build and run the Next.js Admin Dashboard application.
 ### Access the Admin Dashboard (frontend)
 
 http://localhost:3000
+
+**Credentials**
+
+| Field    | Value                          |
+|----------|--------------------------------|
+| Email    | william.mcallister@example.com |
+| Password | password                       |
+
+### Option B: Local installation with NPM
+
+```
+cd saas_fuel_admin
+```
+
+Install dependecies
+
+```
+npm install
+```
+
+Run development server
+```
+npm run dev
+```
+
+
+This will build and run the Next.js Admin Dashboard application.
+
+### Access the Admin Dashboard (frontend)
+
+http://localhost:3000
+
+**Credentials**
+
+| Field    | Value                          |
+|----------|--------------------------------|
+| Email    | william.mcallister@example.com |
+| Password | password                       |
 
 ### Optional:
 
