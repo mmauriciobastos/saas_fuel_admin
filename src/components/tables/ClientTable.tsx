@@ -1,14 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
-
+import React from "react";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table";
 import Pagination from "./Pagination";
+import { useHydraPaginatedResource } from "@/hooks/useHydraPaginatedResource";
 // API models for Clients (based on the provided Hydra payload)
 interface ApiClient {
   "@id": string;
@@ -24,83 +18,9 @@ interface ApiClient {
   createdAt?: string;
 }
 
-// Consolidated Hydra collection type
-// Retained for potential future explicit typing; currently unused so omitted to satisfy lint
-// type ClientsHydraResponse = HydraCollection<ApiClient>;
-
-import { apiFetch, getApiBase } from "@/lib/api";
-import { type HydraCollection, getHydraMembers, getHydraTotalItems, getHydraView } from "@/types/hydra";
-const API_BASE = getApiBase();
-
 export default function ClientTable() {
-  const [page, setPage] = useState(1);
-  const [clients, setClients] = useState<ApiClient[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [perPage, setPerPage] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
-
-    async function fetchClients() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const url = `${API_BASE}/clients?page=${page}`;
-        const res = await apiFetch(url, {
-          method: "GET",
-          headers: {
-            Accept: "application/ld+json, application/json",
-          },
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to fetch clients (status ${res.status})`);
-        }
-
-        const data: HydraCollection<ApiClient> = await res.json();
-        if (!isMounted) return;
-
-        const members = getHydraMembers(data);
-        const itemsCount = getHydraTotalItems(data) ?? 0;
-        const view = getHydraView(data);
-
-        setClients(members);
-        setTotalItems(itemsCount);
-
-        // Capture a stable perPage (assuming server uses consistent page size except last page)
-        if (perPage === null && members.length > 0) {
-          setPerPage(members.length);
-        }
-        let pages = 1;
-        if (itemsCount > 0) {
-          const effectivePerPage = perPage || members.length || itemsCount;
-          pages = Math.max(1, Math.ceil(itemsCount / effectivePerPage));
-        }
-        setTotalPages(pages);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          if (err.name === "AbortError") return;
-          setError(err.message || "Failed to load clients");
-        } else {
-          setError("Failed to load clients");
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    }
-
-    fetchClients();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [page, perPage]);
+  const { page, setPage, items: clients, totalItems, totalPages, isLoading, error } =
+    useHydraPaginatedResource<ApiClient>({ endpoint: "clients" });
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">

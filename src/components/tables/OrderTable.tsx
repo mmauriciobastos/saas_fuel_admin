@@ -1,17 +1,9 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
-
+import React from "react";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "../ui/table";
 import Badge from "../ui/badge/Badge";
 import Pagination from "./Pagination";
-import { apiFetch, getApiBase } from "@/lib/api";
-import { type HydraCollection, getHydraMembers, getHydraTotalItems, getHydraView } from "@/types/hydra";
+import { useHydraPaginatedResource } from "@/hooks/useHydraPaginatedResource";
 
 // API models (based on the Hydra payload shape provided)
 interface ApiOrder {
@@ -28,18 +20,14 @@ interface ApiOrder {
   deliveryTruck?: string; // IRI
 }
 
-type OrdersHydraResponse = HydraCollection<ApiOrder>;
-
 function getStatusColor(status: string): "success" | "warning" | "error" | "primary" {
   const s = status.toLowerCase();
   if (s === "delivered" || s === "complete" || s === "completed") return "success";
   if (s === "scheduled" || s === "in progress") return "primary";
-  if (s === "pending" ) return "warning";
+  if (s === "pending") return "warning";
   if (s === "cancelled" || s === "failed") return "error";
   return "error"; // cancelled, failed, etc.
 }
-
-const API_BASE = getApiBase();
 
 function formatCreatedAt(raw?: string): string {
   if (!raw) return "-";
@@ -48,84 +36,15 @@ function formatCreatedAt(raw?: string): string {
   const DD = String(d.getDate()).padStart(2, "0");
   const MM = String(d.getMonth() + 1).padStart(2, "0");
   const YYYY = d.getFullYear();
-  const HH = String(d.getHours()).padStart(2, "0"); // H (24h) zero-padded
-  const ii = String(d.getMinutes()).padStart(2, "0"); // i (minutes) zero-padded
-  const ss = String(d.getSeconds()).padStart(2, "0"); // s (seconds) zero-padded
+  const HH = String(d.getHours()).padStart(2, "0");
+  const ii = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
   return `${DD}/${MM}/${YYYY} ${HH}:${ii}:${ss}`;
 }
 
 export default function OrderTable() {
-  const [page, setPage] = useState(1);
-  const [orders, setOrders] = useState<ApiOrder[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [perPage, setPerPage] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
-
-    async function fetchOrders() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const url = `${API_BASE}/orders?page=${page}`;
-        const res = await apiFetch(url, {
-          method: "GET",
-          headers: {
-            // Prefer JSON-LD to align with Hydra
-            Accept: "application/ld+json, application/json",
-          },
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to fetch orders (status ${res.status})`);
-        }
-
-        const data: OrdersHydraResponse = await res.json();
-        if (!isMounted) return;
-
-  const members = getHydraMembers(data);
-        const itemsCount = getHydraTotalItems(data) ?? 0;
-        const view = getHydraView(data);
-
-        setOrders(members);
-        setTotalItems(itemsCount);
-
-        // Determine totalPages
-        // Capture stable perPage (assumes server returns consistent page size except last page)
-        if (perPage === null && members.length > 0) {
-          setPerPage(members.length);
-        }
-
-        let pages = 1;
-        if (itemsCount > 0) {
-          const effectivePerPage = perPage || members.length || itemsCount; // fallback chain
-          pages = Math.max(1, Math.ceil(itemsCount / effectivePerPage));
-        }
-        setTotalPages(pages);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          if (err.name === "AbortError") return;
-          setError(err.message || "Failed to load orders");
-        } else {
-          setError("Failed to load orders");
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    }
-
-    fetchOrders();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [page, perPage]);
+  const { page, setPage, items: orders, totalItems, totalPages, isLoading, error } =
+    useHydraPaginatedResource<ApiOrder>({ endpoint: "orders" });
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
@@ -135,34 +54,19 @@ export default function OrderTable() {
             {/* Table Header */}
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                   Order ID
                 </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                   Fuel Amount
                 </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                   Delivery Address
                 </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                   Created
                 </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
+                <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
                   Status
                 </TableCell>
               </TableRow>
@@ -203,33 +107,32 @@ export default function OrderTable() {
                 </TableRow>
               )}
 
-              {!isLoading && !error && orders.map((order) => {
-                const liters = Number(order.fuelAmount);
-                const formattedAmount = isFinite(liters)
-                  ? `${liters.toLocaleString()} L`
-                  : order.fuelAmount;
-                return (
-                  <TableRow key={order.id}>
-                    <TableCell className="px-5 py-4 sm:px-6 text-start text-gray-800 text-theme-sm dark:text-white/90">
-                      #{order.id}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {formattedAmount}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {order.deliveryAddress}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {formatCreatedAt(order.createdAt)}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      <Badge size="sm" color={getStatusColor(order.status)}>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {!isLoading && !error &&
+                orders.map((order) => {
+                  const liters = Number(order.fuelAmount);
+                  const formattedAmount = isFinite(liters) ? `${liters.toLocaleString()} L` : order.fuelAmount;
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell className="px-5 py-4 sm:px-6 text-start text-gray-800 text-theme-sm dark:text-white/90">
+                        #{order.id}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        {formattedAmount}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        {order.deliveryAddress}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        {formatCreatedAt(order.createdAt)}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                        <Badge size="sm" color={getStatusColor(order.status)}>
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </div>
@@ -237,15 +140,12 @@ export default function OrderTable() {
 
       {/* Footer with pagination */}
       <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 dark:border-white/[0.05]">
-        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-          Total: {totalItems.toLocaleString()} orders
-        </p>
+        <p className="text-theme-xs text-gray-500 dark:text-gray-400">Total: {totalItems.toLocaleString()} orders</p>
         <Pagination
           currentPage={page}
           totalPages={totalPages}
           onPageChange={(p) => {
             if (p < 1) return;
-            // Clamp to totalPages to avoid navigating to phantom pages
             const clamped = Math.min(p, totalPages);
             if (clamped === page) return;
             setPage(clamped);

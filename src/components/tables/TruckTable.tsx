@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Table,
   TableBody,
@@ -10,8 +10,7 @@ import {
 
 import Badge from "../ui/badge/Badge";
 import Pagination from "./Pagination";
-import { apiFetch, getApiBase } from "@/lib/api";
-import { type HydraCollection, getHydraMembers, getHydraTotalItems, getHydraView } from "@/types/hydra";
+import { useHydraPaginatedResource } from "@/hooks/useHydraPaginatedResource";
 
 // API models for Delivery Trucks (based on provided payload)
 interface ApiTruck {
@@ -26,8 +25,6 @@ interface ApiTruck {
   createdAt?: string;
 }
 
-type TrucksHydraResponse = HydraCollection<ApiTruck>;
-
 function getStatusColor(
   status: string
 ): "success" | "warning" | "error" {
@@ -38,78 +35,9 @@ function getStatusColor(
   return "error"; // maintenance, offline, etc.
 }
 
-const API_BASE = getApiBase();
-
 export default function TruckTable() {
-  const [page, setPage] = useState(1);
-  const [trucks, setTrucks] = useState<ApiTruck[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [perPage, setPerPage] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
-
-    async function fetchTrucks() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const url = `${API_BASE}/delivery_trucks?page=${page}`;
-        const res = await apiFetch(url, {
-          method: "GET",
-          headers: {
-            Accept: "application/ld+json, application/json",
-          },
-          signal: controller.signal,
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to fetch trucks (status ${res.status})`);
-        }
-
-        const data: TrucksHydraResponse = await res.json();
-        if (!isMounted) return;
-
-        const members = getHydraMembers(data);
-        const itemsCount = getHydraTotalItems(data) ?? 0;
-        const view = getHydraView(data);
-
-        setTrucks(members);
-        setTotalItems(itemsCount);
-
-        // Stabilize perPage using the first non-empty page
-        if (perPage === null && members.length > 0) {
-          setPerPage(members.length);
-        }
-
-        let pages = 1;
-        if (itemsCount > 0) {
-          const effectivePerPage = perPage || members.length || itemsCount;
-          pages = Math.max(1, Math.ceil(itemsCount / effectivePerPage));
-        }
-        setTotalPages(pages);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          if (err.name === "AbortError") return;
-          setError(err.message || "Failed to load trucks");
-        } else {
-          setError("Failed to load trucks");
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    }
-
-    fetchTrucks();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [page, perPage]);
+  const { page, setPage, items: trucks, totalItems, totalPages, isLoading, error } =
+    useHydraPaginatedResource<ApiTruck>({ endpoint: "delivery_trucks" });
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
