@@ -18,8 +18,8 @@ export interface UseHydraPaginatedResourceOptions<T> {
   abortOnUnmount?: boolean;
   /** Whether to refetch current page when endpoint changes (default true). */
   refetchOnEndpointChange?: boolean;
-  /** Optional transform for each member. */
-  mapItem?: (item: any) => T;
+  /** Optional transform for each member (use unknown to avoid implicit any). */
+  mapItem?: (item: unknown) => T;
 }
 
 export interface PaginatedState<T> {
@@ -38,7 +38,7 @@ export interface PaginatedState<T> {
  * Generic Hydra paginated resource hook.
  * Handles: fetch, stable perPage inference, page clamping, total page calculation.
  */
-export function useHydraPaginatedResource<T = any>(
+export function useHydraPaginatedResource<T = unknown>(
   options: UseHydraPaginatedResourceOptions<T>
 ): PaginatedState<T> {
   const {
@@ -87,7 +87,7 @@ export function useHydraPaginatedResource<T = any>(
     return url.toString();
   }, [endpoint, params, page, pageSizeParam]);
 
-  const fetchPage = useCallback(async () => {
+  const fetchPage = useCallback(async (): Promise<() => void> => {
     const controller = new AbortController();
     try {
       setIsLoading(true);
@@ -99,20 +99,21 @@ export function useHydraPaginatedResource<T = any>(
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(`Failed to fetch (status ${res.status})`);
-
-      const data: HydraCollection<any> = await res.json();
-      const members = getHydraMembers(data);
+      const data: HydraCollection<unknown> = await res.json();
+      const rawMembers = getHydraMembers(data);
       const itemsCount = getHydraTotalItems(data) ?? 0;
 
-      if (perPage === null && members.length > 0) {
-        setPerPage(members.length);
+      if (perPage === null && rawMembers.length > 0) {
+        setPerPage(rawMembers.length);
       }
-
-      setItems(mapItem ? members.map(mapItem) : members);
+      const processed: T[] = mapItem
+        ? rawMembers.map((m) => mapItem(m))
+        : (rawMembers as T[]);
+      setItems(processed);
       setTotalItems(itemsCount);
 
       // Derive pages
-      const effectivePerPage = perPage || members.length || itemsCount || 1;
+      const effectivePerPage = perPage || rawMembers.length || itemsCount || 1;
       const pages = Math.max(1, Math.ceil(itemsCount / effectivePerPage));
       setTotalPages(pages);
 
@@ -120,9 +121,16 @@ export function useHydraPaginatedResource<T = any>(
       if (page > pages) {
         setPage(pages);
       }
-    } catch (e: any) {
-      if (e?.name === "AbortError") return;
-      setError(e?.message || "Failed to load resource");
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "AbortError") {
+        // Return a no-op cleanup for consistent return type
+        return () => {};
+      }
+      if (e instanceof Error) {
+        setError(e.message || "Failed to load resource");
+      } else {
+        setError("Failed to load resource");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +138,7 @@ export function useHydraPaginatedResource<T = any>(
   }, [buildUrl, mapItem, page, perPage]);
 
   useEffect(() => {
-    let cleanup: any;
+    let cleanup: (() => void) | undefined;
     fetchPage().then((c) => (cleanup = c));
     return () => {
       if (abortOnUnmount && cleanup) cleanup();

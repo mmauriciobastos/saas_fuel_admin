@@ -149,7 +149,7 @@ export default function NewOrderPage() {
           const m = String(created["@id"]).match(/\/(\d+)$|=(\d+)$/);
           if (m) orderNumber = m[1] || m[2];
         }
-      } catch (_) {
+      } catch {
         // ignore JSON parse errors (some APIs may return empty body)
       }
 
