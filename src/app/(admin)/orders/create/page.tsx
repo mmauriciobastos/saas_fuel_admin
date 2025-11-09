@@ -140,8 +140,28 @@ export default function NewOrderPage() {
         throw new Error(msg);
       }
 
-      setSuccess("Order created successfully. Redirecting to Orders...");
-      setTimeout(() => router.push("/orders"), 900);
+      // Try to extract order number from response JSON or Location/@id
+      let orderNumber: string | number | undefined;
+      try {
+        const created = await res.json();
+        if (created?.id) orderNumber = created.id;
+        else if (created?.["@id"]) {
+          const m = String(created["@id"]).match(/\/(\d+)$|=(\d+)$/);
+          if (m) orderNumber = m[1] || m[2];
+        }
+      } catch (_) {
+        // ignore JSON parse errors (some APIs may return empty body)
+      }
+
+      // Derive client name from the selected client
+      const selectedClient = clients.find((cl) => cl.id === idNum);
+      const clientName = selectedClient?.name;
+
+      // Redirect to Orders with flash params consumed by the Orders page
+      const params = new URLSearchParams({ created: "1" });
+      if (orderNumber !== undefined) params.set("orderId", String(orderNumber));
+      if (clientName) params.set("clientName", clientName);
+      router.push(`/orders?${params.toString()}`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to create order");
     } finally {

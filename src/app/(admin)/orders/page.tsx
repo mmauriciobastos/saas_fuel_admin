@@ -3,11 +3,12 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import OrderTable from "@/components/tables/OrderTable";
 import { Metadata } from "next";
 import React from "react";
+import OrderSuccessAlert from "@/components/orders/OrderSuccessAlert";
 
 export const metadata: Metadata = {
-  title: "Next.js Basic Table | TailAdmin - Next.js Dashboard Template",
+  title: "Orders Table",
   description:
-    "This is Next.js Basic Table  page for TailAdmin  Tailwind CSS Admin Dashboard Template",
+    "This is the Orders Table page. It contains a list of all orders.",
   // other metadata
 };
 
@@ -16,6 +17,8 @@ export default function BasicTables() {
     <div>
       <PageBreadcrumb pageTitle="Orders" />
       <div className="space-y-6">
+        {/* Flash success message when redirected from Create Order */}
+        <OrderSuccessAlert />
         <ComponentCard title="Orders Table">
           <OrderTable />
         </ComponentCard>
