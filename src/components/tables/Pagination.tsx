@@ -9,10 +9,12 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
 }) => {
-  const pagesAroundCurrent = Array.from(
-    { length: Math.min(3, totalPages) },
-    (_, i) => i + Math.max(currentPage - 1, 1)
-  );
+  // Determine a window of up to 3 pages centered around currentPage,
+  // clamped to [1, totalPages]. This prevents rendering pages beyond totalPages.
+  const windowSize = Math.min(3, totalPages);
+  const start = Math.max(Math.min(currentPage - 1, totalPages - (windowSize - 1)), 1);
+  const end = Math.min(start + windowSize - 1, totalPages);
+  const pagesAroundCurrent = Array.from({ length: end - start + 1 }, (_, i) => start + i);
 
   return (
     <div className="flex items-center ">
@@ -24,7 +26,7 @@ const Pagination: React.FC<PaginationProps> = ({
         Previous
       </button>
       <div className="flex items-center gap-2">
-        {currentPage > 3 && <span className="px-2">...</span>}
+        {start > 1 && <span className="px-2">...</span>}
         {pagesAroundCurrent.map((page) => (
           <button
             key={page}
@@ -38,7 +40,7 @@ const Pagination: React.FC<PaginationProps> = ({
             {page}
           </button>
         ))}
-        {currentPage < totalPages - 2 && <span className="px-2">...</span>}
+        {end < totalPages && <span className="px-2">...</span>}
       </div>
       <button
         onClick={() => onPageChange(currentPage + 1)}

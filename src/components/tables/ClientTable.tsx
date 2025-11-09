@@ -37,6 +37,7 @@ export default function ClientTable() {
   const [clients, setClients] = useState<ApiClient[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [perPage, setPerPage] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,19 +72,14 @@ export default function ClientTable() {
         setClients(members);
         setTotalItems(itemsCount);
 
+        // Capture a stable perPage (assuming server uses consistent page size except last page)
+        if (perPage === null && members.length > 0) {
+          setPerPage(members.length);
+        }
         let pages = 1;
-        const lastUrl = view?.last || view?.["hydra:last"];
-        if (lastUrl) {
-          try {
-            const u = new URL(lastUrl, API_BASE);
-            const p = u.searchParams.get("page");
-            pages = p ? Math.max(1, parseInt(p, 10)) : 1;
-          } catch {
-            pages = 1;
-          }
-        } else {
-          const perPage = members?.length || 1;
-          pages = perPage > 0 ? Math.max(1, Math.ceil(itemsCount / perPage)) : 1;
+        if (itemsCount > 0) {
+          const effectivePerPage = perPage || members.length || itemsCount;
+          pages = Math.max(1, Math.ceil(itemsCount / effectivePerPage));
         }
         setTotalPages(pages);
       } catch (err: unknown) {
@@ -104,7 +100,7 @@ export default function ClientTable() {
       isMounted = false;
       controller.abort();
     };
-  }, [page]);
+  }, [page, perPage]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
@@ -210,8 +206,10 @@ export default function ClientTable() {
           currentPage={page}
           totalPages={totalPages}
           onPageChange={(p) => {
-            if (p < 1 || p > totalPages || p === page) return;
-            setPage(p);
+            if (p < 1) return;
+            const clamped = Math.min(p, totalPages);
+            if (clamped === page) return;
+            setPage(clamped);
           }}
         />
       </div>
